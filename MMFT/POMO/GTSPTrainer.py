@@ -195,9 +195,9 @@ class TSPTrainer:
 
         # Loss
         ###############################################
-        # advantage = reward - reward.float().mean(dim=1, keepdim=True)
-        max_reward, _ = reward.float().max(dim=1, keepdim=True)
-        advantage = reward - max_reward
+        advantage = reward - reward.float().mean(dim=1, keepdim=True)
+        # max_reward, _ = reward.float().max(dim=1, keepdim=True)
+        # advantage = reward - max_reward
         # shape: (batch, pomo)
         log_prob = prob_list.log().sum(dim=2)
         # size = (batch, pomo)

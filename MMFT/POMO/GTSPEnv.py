@@ -147,14 +147,10 @@ class TSPEnv:
         self.finished = self.finished + (self.ninf_mask[:, :, 1:] == float('-inf')).all(dim=2)
         self.ninf_mask[:, :, 0][self.finished] = 0
         
-        # 如果所有非depot节点都被访问过，强制选择depot作为下一个节点
         if self.finished.any():
-            # 找到已完成但未选择depot的实例
             need_depot = self.finished & (self.current_node != 0)
             if need_depot.any():
-                # 强制选择depot
                 self.current_node[need_depot] = 0
-                # 更新selected_node_list
                 self.selected_node_list = torch.cat((self.selected_node_list, self.current_node[:, :, None]), dim=2)
         
         self.step_state.selected_count = self.selected_count

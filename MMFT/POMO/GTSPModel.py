@@ -12,22 +12,17 @@ class GTSPGIMFModel(nn.Module):
     def __init__(self, **model_params):
         super().__init__()
         self.model_params = model_params
-        
-        # 图模态编码器
+
         self.graph_encoder = TSP_Encoder(**model_params)
-        
-        # 图像模态编码器
+
         from ImageEncoder import VisionTransformer, CoordinateImageBuilder
         self.image_builder = CoordinateImageBuilder(**model_params)
         self.vision_encoder = VisionTransformer(**model_params)
-        
-        # 多模态融合层
+
         self.multimodal_fusion = MultimodalFusionLayer(**model_params)
-        
-        # 解码器
+
         self.decoder = Decoder(**model_params)
-        
-        # 编码节点和图嵌入缓存
+
         self.encoded_nodes = None
         self.graph_embedding = None
         self.image_embedding = None
@@ -36,24 +31,20 @@ class GTSPGIMFModel(nn.Module):
     def pre_forward(self, reset_state):
         node_xy = reset_state.node_xy
         cluster_idx = reset_state.cluster_idx
-        
-        # 图编码
+
         self.encoded_nodes = self.graph_encoder(node_xy, cluster_idx)
         self.graph_embedding = self.encoded_nodes.mean(-2)
-        
-        # 图像编码
+
         batch_size = node_xy.shape[0]
         coord_image = self.image_builder.build_gtsp_image(node_xy, cluster_idx)
         self.image_embedding = self.vision_encoder(coord_image)
-        
-        # 多模态融合
+
         self.fused_nodes = self.multimodal_fusion(
             self.encoded_nodes, 
             self.image_embedding,
             self.graph_embedding
         )
-        
-        # 设置解码器键值
+
         self.decoder.set_kv(self.fused_nodes)
 
     def get_k_nearest_neighbor(self, node_xy, pomo_size):
@@ -69,10 +60,10 @@ class GTSPGIMFModel(nn.Module):
             prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
             # action = torch.zeros(size=(batch_size, pomo_size, 2))
 
-        # elif state.selected_count == 1:  # Second Move, POMO
-        #     k_neigbors = self.get_k_nearest_neighbor(node_xy, pomo_size)
-        #     selected = k_neigbors
-        #     prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
+        elif state.selected_count == 1:  # Second Move, POMO
+            k_neigbors = self.get_k_nearest_neighbor(node_xy, pomo_size)
+            selected = k_neigbors
+            prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
         else:
             encoded_last_node = _get_encoding(self.fused_nodes, state.current_node)
             # shape: (batch, pomo, embedding)
@@ -374,24 +365,19 @@ class MultimodalFusionLayer(nn.Module):
         super().__init__()
         self.model_params = model_params
         embedding_dim = model_params['embedding_dim']
-        
-        # 多模态融合层数
+
         self.fusion_layer_num = model_params.get('fusion_layer_num', 3)
-        
-        # 模态特定瓶颈数量
+
         self.nb = model_params.get('bottleneck_size', 10)
-        
-        # 图模态瓶颈
+
         self.graph_bottlenecks = nn.Parameter(
             torch.randn(1, self.nb, embedding_dim)
         )
-        
-        # 图像模态瓶颈
+
         self.image_bottlenecks = nn.Parameter(
             torch.randn(1, self.nb, embedding_dim)
         )
-        
-        # 多模态层
+
         self.layers = nn.ModuleList([
             MultimodalFusionSingleLayer(**model_params) 
             for _ in range(self.fusion_layer_num)
@@ -399,8 +385,7 @@ class MultimodalFusionLayer(nn.Module):
     
     def forward(self, graph_nodes, image_nodes, graph_embedding):
         batch_size = graph_nodes.size(0)
-        
-        # 扩展瓶颈到批次大小
+
         graph_bottlenecks = self.graph_bottlenecks.expand(batch_size, -1, -1)
         image_bottlenecks = self.image_bottlenecks.expand(batch_size, -1, -1)
         
@@ -409,8 +394,7 @@ class MultimodalFusionLayer(nn.Module):
                 graph_nodes, graph_bottlenecks, 
                 image_nodes, image_bottlenecks
             )
-        
-        # 融合两种模态的节点表示
+
         fused_nodes = graph_nodes + 0.5 * image_nodes.mean(dim=1, keepdim=True).expand_as(graph_nodes)
         
         return fused_nodes
@@ -422,22 +406,18 @@ class MultimodalFusionSingleLayer(nn.Module):
         embedding_dim = model_params['embedding_dim']
         head_num = model_params['head_num']
         qkv_dim = model_params['qkv_dim']
-        
-        # 图引导的跨注意力
+
         self.graph_guided_cross_attn = MultiHeadCrossAttention(
             embedding_dim, head_num, qkv_dim
         )
-        
-        # 图像引导的跨注意力
+
         self.image_guided_cross_attn = MultiHeadCrossAttention(
             embedding_dim, head_num, qkv_dim
         )
-        
-        # 规范化层
+
         self.norm_graph = nn.LayerNorm(embedding_dim)
         self.norm_image = nn.LayerNorm(embedding_dim)
-        
-        # 前馈网络
+
         self.ff_graph = ParallelGatedMLP(hidden_size=embedding_dim)
         self.norm_ff_graph = nn.LayerNorm(embedding_dim)
         
@@ -445,27 +425,22 @@ class MultimodalFusionSingleLayer(nn.Module):
         self.norm_ff_image = nn.LayerNorm(embedding_dim)
     
     def forward(self, graph_nodes, graph_bottlenecks, image_nodes, image_bottlenecks):
-        # 图引导的跨注意力
         graph_input = torch.cat([graph_nodes, graph_bottlenecks], dim=1)
         image_keys = torch.cat([image_nodes, image_bottlenecks], dim=1)
         
         graph_attn_out = self.graph_guided_cross_attn(
             graph_input, image_keys, image_keys
         )
-        
-        # 分离节点和瓶颈
+
         updated_graph_nodes = graph_attn_out[:, :graph_nodes.size(1)]
         updated_graph_bottlenecks = graph_attn_out[:, graph_nodes.size(1):]
-        
-        # 规范化和残差连接
+
         normalized_graph_nodes = self.norm_graph(graph_nodes + updated_graph_nodes)
         normalized_graph_bottlenecks = self.norm_graph(graph_bottlenecks + updated_graph_bottlenecks)
-        
-        # 前馈网络
+
         ff_graph_nodes = normalized_graph_nodes + self.ff_graph(normalized_graph_nodes)
         ff_graph_bottlenecks = normalized_graph_bottlenecks + self.ff_graph(normalized_graph_bottlenecks)
-        
-        # 同样的操作应用于图像模态
+
         image_input = torch.cat([image_nodes, image_bottlenecks], dim=1)
         graph_keys = torch.cat([graph_nodes, graph_bottlenecks], dim=1)
         

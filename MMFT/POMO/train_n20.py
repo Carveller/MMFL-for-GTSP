@@ -46,12 +46,12 @@ model_params = {
     'logit_clipping': 10,
     'ff_hidden_dim': 512,
     'eval_type': 'argmax',
-    # 新增参数
+
     'fusion_layer_num': 3,
     'bottleneck_size': 10,
     'patch_size': 16,
     'in_channels': 1,
-    # 问题规模自适应分辨率(PSAR)策略参数
+
     'use_psar': True,
 }
 
@@ -62,7 +62,7 @@ optimizer_params = {
     },
     'scheduler': {
         'T_max': 200,
-        'eta_min': 1e-6  # 最小学习率
+        'eta_min': 1e-6
     }
 }
 

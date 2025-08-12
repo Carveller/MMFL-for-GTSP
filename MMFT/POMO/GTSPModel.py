@@ -69,10 +69,10 @@ class GTSPGIMFModel(nn.Module):
             prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
             # action = torch.zeros(size=(batch_size, pomo_size, 2))
 
-        elif state.selected_count == 1:  # Second Move, POMO
-            k_neigbors = self.get_k_nearest_neighbor(node_xy, pomo_size)
-            selected = k_neigbors
-            prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
+        # elif state.selected_count == 1:  # Second Move, POMO
+        #     k_neigbors = self.get_k_nearest_neighbor(node_xy, pomo_size)
+        #     selected = k_neigbors
+        #     prob_node = torch.ones(size=(batch_size, pomo_size), device=node_xy.device)
         else:
             encoded_last_node = _get_encoding(self.fused_nodes, state.current_node)
             # shape: (batch, pomo, embedding)

@@ -42,4 +42,4 @@ dependencies:
     - torchaudio==2.2.2
     - torchvision==0.17.2
     - typing-extensions==4.12.2
-prefix: /Users/mingfengfan/anaconda3/envs/py311
+

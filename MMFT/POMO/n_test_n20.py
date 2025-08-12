@@ -58,7 +58,7 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': r'D:\OneDrive\0001博士\0001论文\0007GTSP\GTSP_ViT_CrossAtt_1\MMFT\POMO\result\100_2',  # directory path of pre-trained model and log files saved.
+        'path': r" ",  # directory path of pre-trained model and log files saved.
         'epoch': 200,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 100*100,

@@ -4,6 +4,9 @@
 
 Code of Multimodal Fused Learning for Solving the Generalized Traveling Salesman Problem in Robotic Task Planning
 
+> **Multimodal Fused Learning for Solving the Generalized Traveling Salesman Problem in Robotic Task Planning.**
+> Jiaqi Chen, Mingfeng Fan, Xuefeng Zhang, Jingsong Liang, Yuhong Cao, Guohua Wu, Guillaume Adrien Sartoretti.  CoRL 2025
+
 
 ## Usage
 
